@@ -1747,27 +1747,7 @@ public partial class TaskQueueViewModel : ViewModelBase
 
     public static int ExtractNumberFromEmulatorConfig(string emulatorConfig)
     {
-        emulatorConfig = emulatorConfig.Trim();
-        if (string.IsNullOrWhiteSpace(emulatorConfig))
-        {
-            return -1;
-        }
-
-        foreach (var prefix in MultiInstanceEditorDialogViewModel.EmulatorMultiOpenArgumentPrefixes.Values)
-        {
-            if (!emulatorConfig.StartsWith(prefix, StringComparison.Ordinal))
-            {
-                continue;
-            }
-
-            var indexPart = emulatorConfig[prefix.Length..].Trim();
-            if (int.TryParse(indexPart, out var index) && index >= 0)
-            {
-                return index;
-            }
-        }
-
-        return -1;
+        return MultiInstanceEditorDialogViewModel.TryExtractIndexFromEmulatorConfig(emulatorConfig);
     }
 
     private bool TryGetIndexFromConfig(string configJson, out int index)

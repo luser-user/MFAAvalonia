@@ -81,30 +81,43 @@ public partial class MultiInstanceEditorDialogViewModel : ViewModelBase
     public static int TryExtractIndexFromEmulatorConfig(string emulatorConfig)
     {
         emulatorConfig = emulatorConfig.Trim();
-        // 1. 基础校验：配置为空/空白 → 返回 -1
         if (string.IsNullOrWhiteSpace(emulatorConfig))
         {
             return -1;
         }
 
-        // 2. 遍历所有模拟器前缀规则，自动匹配（核心逻辑）
         foreach (var (_, targetPrefix) in EmulatorMultiOpenArgumentPrefixes)
         {
-            // 检查配置是否以当前前缀开头（匹配成功则尝试提取）
-            if (emulatorConfig.StartsWith(targetPrefix, StringComparison.Ordinal))
+            var prefixIndex = emulatorConfig.IndexOf(targetPrefix, StringComparison.Ordinal);
+            if (prefixIndex < 0)
             {
-                // 截取前缀后的内容（去除首尾空白，避免空格干扰）
-                var indexPart = emulatorConfig.Substring(targetPrefix.Length).Trim();
+                continue;
+            }
 
-                // 尝试转换为非负整数 → 有效则直接返回（找到唯一匹配）
-                if (int.TryParse(indexPart, out int index) && index >= 0)
-                {
-                    return index;
-                }
+            var indexStart = prefixIndex + targetPrefix.Length;
+            while (indexStart < emulatorConfig.Length && char.IsWhiteSpace(emulatorConfig[indexStart]))
+            {
+                indexStart++;
+            }
+
+            if (indexStart >= emulatorConfig.Length || !char.IsDigit(emulatorConfig[indexStart]))
+            {
+                continue;
+            }
+
+            var indexEnd = indexStart;
+            while (indexEnd < emulatorConfig.Length && char.IsDigit(emulatorConfig[indexEnd]))
+            {
+                indexEnd++;
+            }
+
+            var indexPart = emulatorConfig[indexStart..indexEnd];
+            if (int.TryParse(indexPart, out int index) && index >= 0)
+            {
+                return index;
             }
         }
 
-        // 3. 无任何前缀匹配 或 匹配后不是有效数字 → 返回 -1
         return -1;
     }
 }

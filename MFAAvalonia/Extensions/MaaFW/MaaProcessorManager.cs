@@ -823,15 +823,19 @@ public sealed class MaaProcessorManager
         LoggerHelper.Info($"[调试] instances 目录中实际存在的实例文件数量: {scannedIds.Count}, ID列表: [{string.Join(", ", scannedIds)}]");
 
         // 构造函数创建的临时 default 实例可能因为大小写不一致被写成 Default.json/default.json。
-        // 若已存在其他真实实例，则删除这些临时文件，防止误识别为用户创建的实例。
-        var tempDefaultIds = scannedIds
+        // 只有明确属于“仅含启动占位数据”的 bootstrap default 文件才允许清理；
+        // 否则用户真实使用 default 作为实例 ID 时会被误删。
+        var defaultIds = scannedIds
             .Where(id => string.Equals(id, "default", StringComparison.OrdinalIgnoreCase))
             .ToList();
-        if (tempDefaultIds.Count > 0
+        var bootstrapDefaultIds = defaultIds
+            .Where(IsBootstrapDefaultInstance)
+            .ToList();
+        if (bootstrapDefaultIds.Count > 0
             && scannedIds.Any(id => !string.Equals(id, "default", StringComparison.OrdinalIgnoreCase)))
         {
-            LoggerHelper.Info($"[调试] 检测到 {tempDefaultIds.Count} 个临时 default 实例文件，正在删除...");
-            foreach (var tempDefaultId in tempDefaultIds)
+            LoggerHelper.Info($"[调试] 检测到 {bootstrapDefaultIds.Count} 个临时 default 实例文件，正在删除...");
+            foreach (var tempDefaultId in bootstrapDefaultIds)
             {
                 try
                 {
@@ -845,7 +849,12 @@ public sealed class MaaProcessorManager
                 }
             }
 
-            scannedIds.RemoveAll(id => string.Equals(id, "default", StringComparison.OrdinalIgnoreCase));
+            scannedIds.RemoveAll(id => bootstrapDefaultIds.Contains(id));
+        }
+        else if (defaultIds.Count > 0
+                 && scannedIds.Any(id => !string.Equals(id, "default", StringComparison.OrdinalIgnoreCase)))
+        {
+            LoggerHelper.Info("[调试] 检测到存在其他实例的 default 实例文件，但其包含真实配置，已保留");
         }
 
         if (scannedIds.Count == 1
