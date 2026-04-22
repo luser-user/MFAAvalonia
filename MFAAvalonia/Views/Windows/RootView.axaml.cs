@@ -139,8 +139,7 @@ public partial class RootView : SukiWindow
             var currentVM = Instances.InstanceTabBarViewModel.ActiveTab?.TaskQueueViewModel;
             if (currentVM != null)
             {
-                currentVM.Processor.InstanceConfiguration.SetValue(ConfigurationKeys.TaskItems,
-                    currentVM.TaskItemViewModels.Where(m => !m.IsResourceOptionItem).Select(model => model.InterfaceItem).ToList());
+                currentVM.PersistConfigurationState();
             }
 
             // 确保窗口大小和位置被立即保存（绕过防抖机制）

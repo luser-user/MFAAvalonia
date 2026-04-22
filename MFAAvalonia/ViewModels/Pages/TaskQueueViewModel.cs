@@ -243,26 +243,28 @@ public partial class TaskQueueViewModel : ViewModelBase
 
             var resourceToSelect = targetResource ?? CurrentResource;
             var nextResources = new ObservableCollection<MaaInterface.MaaInterfaceResource>(filteredResources);
+            var resolvedResource = !string.IsNullOrWhiteSpace(resourceToSelect) && nextResources.Any(r => r.Name == resourceToSelect)
+                ? resourceToSelect
+                : nextResources.FirstOrDefault()?.Name ?? "Default";
 
             DispatcherHelper.RunOnMainThread(() =>
             {
                 _isRefreshingResourceSelection = true;
+                _pendingResourceSelection = resolvedResource;
                 try
                 {
                     CurrentResources = nextResources;
-
-                    if (!string.IsNullOrWhiteSpace(resourceToSelect) && CurrentResources.Any(r => r.Name == resourceToSelect))
-                    {
-                        CurrentResource = resourceToSelect;
-                    }
-                    else
-                    {
-                        CurrentResource = CurrentResources.FirstOrDefault()?.Name ?? "Default";
-                    }
+                    CurrentResource = resolvedResource;
                 }
                 finally
                 {
                     _isRefreshingResourceSelection = false;
+                    _pendingResourceSelection = null;
+                }
+
+                if (!string.Equals(CurrentResource, resolvedResource, StringComparison.Ordinal))
+                {
+                    CurrentResource = resolvedResource;
                 }
             });
         }
@@ -2280,6 +2282,7 @@ public partial class TaskQueueViewModel : ViewModelBase
     [ObservableProperty] private ObservableCollection<MaaInterface.MaaInterfaceResource> _currentResources = [];
     private string _currentResource = string.Empty;
     private bool _isRefreshingResourceSelection;
+    private string? _pendingResourceSelection;
 
     public string CurrentResource
     {
@@ -2288,11 +2291,19 @@ public partial class TaskQueueViewModel : ViewModelBase
         {
             // 重建资源列表时，ComboBox 可能先把 SelectedValue 瞬时回写为空，
             // 若直接响应会误触发 SetTasker 并释放现有连接。
-            if (_isRefreshingResourceSelection
-                && string.IsNullOrWhiteSpace(value)
-                && !string.IsNullOrWhiteSpace(_currentResource))
+            if (_isRefreshingResourceSelection)
             {
-                return;
+                if (string.IsNullOrWhiteSpace(value)
+                    && !string.IsNullOrWhiteSpace(_currentResource))
+                {
+                    return;
+                }
+
+                if (!string.IsNullOrWhiteSpace(_pendingResourceSelection)
+                    && !string.Equals(value, _pendingResourceSelection, StringComparison.Ordinal))
+                {
+                    return;
+                }
             }
 
             if (string.Equals(_currentResource, value, StringComparison.Ordinal))
@@ -2307,7 +2318,7 @@ public partial class TaskQueueViewModel : ViewModelBase
             }
 
             SetNewProperty(ref _currentResource, value);
-            HandlePropertyChanged(ConfigurationKeys.Resource, value);
+            Processor.InstanceConfiguration.SetValue(ConfigurationKeys.Resource, value);
             LogUiStateChange("ChangeResource", $"当前资源变更：resource={value}, controller={CurrentController}");
 
             if (!string.IsNullOrWhiteSpace(value))
@@ -2319,6 +2330,64 @@ public partial class TaskQueueViewModel : ViewModelBase
                 UpdateTasksForResource(null);
             }
         }
+    }
+
+    public void PersistConfigurationState()
+    {
+        var instanceConfig = Processor.InstanceConfiguration;
+
+        instanceConfig.SetValue(ConfigurationKeys.CurrentController, CurrentController);
+        instanceConfig.SetValue(ConfigurationKeys.CurrentControllerName, GetCurrentControllerName() ?? string.Empty);
+
+        if (!string.IsNullOrWhiteSpace(CurrentResource))
+        {
+            instanceConfig.SetValue(ConfigurationKeys.Resource, CurrentResource);
+        }
+
+        instanceConfig.SetValue(
+            ConfigurationKeys.TaskItems,
+            TaskItemViewModels
+                .Where(m => !m.IsResourceOptionItem)
+                .Select(m => m.InterfaceItem)
+                .ToList());
+
+        PersistResourceOptionConfiguration(instanceConfig);
+    }
+
+    private void PersistResourceOptionConfiguration(InstanceConfiguration instanceConfig)
+    {
+        var allItems = TaskItemViewModels
+            .Where(m => m.IsResourceOptionItem && m.ResourceItem?.SelectOptions != null)
+            .ToList();
+
+        var globalItem = allItems.FirstOrDefault(m => m.ResourceItem?.Name == "__GlobalOption__");
+        if (globalItem?.ResourceItem?.SelectOptions != null)
+        {
+            instanceConfig.SetValue(
+                ConfigurationKeys.GlobalOptionItems,
+                globalItem.ResourceItem.SelectOptions);
+        }
+
+        const string controllerPrefix = "__ControllerOption__";
+        var controllerOptionItems = allItems
+            .Where(m => m.ResourceItem?.Name?.StartsWith(controllerPrefix) == true)
+            .ToDictionary(
+                m => m.ResourceItem!.Name![controllerPrefix.Length..],
+                m => m.ResourceItem!.SelectOptions!);
+        if (controllerOptionItems.Count > 0)
+        {
+            instanceConfig.SetValue(
+                ConfigurationKeys.ControllerOptionItems,
+                controllerOptionItems);
+        }
+
+        var resourceOptionItems = allItems
+            .Where(m => m.ResourceItem?.Name != "__GlobalOption__" &&
+                        m.ResourceItem?.Name?.StartsWith(controllerPrefix) != true)
+            .ToDictionary(
+                m => m.ResourceItem!.Name ?? string.Empty,
+                m => m.ResourceItem!.SelectOptions!);
+        instanceConfig.SetValue(ConfigurationKeys.ResourceOptionItems, resourceOptionItems);
     }
 
     /// <summary>

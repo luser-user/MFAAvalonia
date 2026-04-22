@@ -194,6 +194,7 @@ public static partial class Instances
 
     public static void ShutdownApplication(bool forceStop)
     {
+        PersistRuntimeState();
         AppRuntime.ReleaseMutex();
         if (forceStop)
         {
@@ -212,6 +213,7 @@ public static partial class Instances
     /// </summary>
     public static void RestartApplication(bool noAutoStart = false, bool forgeStop = false)
     {
+        PersistRuntimeState();
         AppRuntime.ReleaseMutex();
         if (noAutoStart)
             GlobalConfiguration.SetValue(ConfigurationKeys.NoAutoStart, bool.TrueString);
@@ -238,11 +240,32 @@ public static partial class Instances
         }
     }
 
+    public static void PersistRuntimeState()
+    {
+        if (OperatingSystem.IsAndroid())
+            return;
+
+        try
+        {
+            MaaProcessorManager.Instance.PersistCurrentSelection();
+
+            foreach (var processor in MaaProcessor.Processors.ToList())
+            {
+                processor.ViewModel?.PersistConfigurationState();
+            }
+        }
+        catch (Exception ex)
+        {
+            LoggerHelper.Error($"退出前保存运行时状态失败：原因={ex.Message}", ex);
+        }
+    }
+
     /// <summary>
     /// 关闭操作系统（需要管理员权限）
     /// </summary>
     public static void ShutdownSystem()
     {
+        PersistRuntimeState();
         TryBeforeClosed();
         try
         {
@@ -270,6 +293,7 @@ public static partial class Instances
     /// </summary>
     public static void RestartSystem()
     {
+        PersistRuntimeState();
         try
         {
             if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
