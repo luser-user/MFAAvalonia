@@ -91,6 +91,7 @@ public partial class AddTaskDialogViewModel : ViewModelBase, IDisposable
                     output.InterfaceItem.Option.ForEach(option =>
                         TaskLoader.SetDefaultOptionValue(MaaProcessor.Interface, option));
                 output.OwnerViewModel = vm;
+                vm.RefreshTaskSupportForCurrentContext(output);
                 vm.TaskItemViewModels.Add(output);
             }
         }
@@ -105,13 +106,14 @@ public partial class AddTaskDialogViewModel : ViewModelBase, IDisposable
                 if (task != null)
                 {
                     task.OwnerViewModel = vm;
+                    vm.RefreshTaskSupportForCurrentContext(task);
                     vm.TaskItemViewModels.Add(task);
                 }
             }
         }
 
         vm.Processor.InstanceConfiguration.SetValue(ConfigurationKeys.TaskItems,
-            vm.TaskItemViewModels.Where(m => !m.IsResourceOptionItem).ToList().Select(model => model.InterfaceItem));
+            vm.TaskItemViewModels.Where(m => !m.IsResourceOptionItem).Select(model => model.InterfaceItem).ToList());
 
         var totalAdded = Sources.Sum(s => s.AddCount) + SpecialTasks.Sum(s => s.AddCount);
         if (totalAdded > 0)

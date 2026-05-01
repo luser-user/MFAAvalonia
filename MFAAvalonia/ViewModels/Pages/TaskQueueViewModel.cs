@@ -433,7 +433,7 @@ public partial class TaskQueueViewModel : ViewModelBase
     partial void OnTaskItemViewModelsChanged(ObservableCollection<DragItemViewModel> value)
     {
         if (ConfigurationManager.IsSwitching) return;
-        Processor.InstanceConfiguration.SetValue(ConfigurationKeys.TaskItems, value.ToList().Select(model => model.InterfaceItem));
+        Processor.InstanceConfiguration.SetValue(ConfigurationKeys.TaskItems, value.Where(model => !model.IsResourceOptionItem).Select(model => model.InterfaceItem).ToList());
     }
 
     [RelayCommand]
@@ -2492,6 +2492,17 @@ public partial class TaskQueueViewModel : ViewModelBase
                 }
             }
         }
+    }
+
+    public void RefreshTaskSupportForCurrentContext(DragItemViewModel task)
+    {
+        if (task.IsResourceOptionItem)
+        {
+            return;
+        }
+
+        task.UpdateResourceSupport(CurrentResource);
+        task.UpdateControllerSupport(GetCurrentControllerName());
     }
 
     /// <summary>

@@ -340,6 +340,8 @@ public partial class TaskQueueView : UserControl
         {
             output.InterfaceItem.Option.ForEach(option => TaskLoader.SetDefaultOptionValue(MaaProcessor.Interface, option));
         }
+        output.OwnerViewModel = vm;
+        vm.RefreshTaskSupportForCurrentContext(output);
 
         var insertIndex = vm.TaskItemViewModels.Count;
         if (selectedItem != null)
@@ -353,7 +355,7 @@ public partial class TaskQueueView : UserControl
 
         vm.TaskItemViewModels.Insert(insertIndex, output);
         vm.Processor.InstanceConfiguration.SetValue(ConfigurationKeys.TaskItems,
-            vm.TaskItemViewModels.Where(m => !m.IsResourceOptionItem).Select(model => model.InterfaceItem));
+            vm.TaskItemViewModels.Where(m => !m.IsResourceOptionItem).Select(model => model.InterfaceItem).ToList());
         listBox.SelectedItem = output;
         ToastHelper.Info(LangKeys.Tip.ToLocalization(), LangKeys.TaskAddedToast.ToLocalizationFormatted(false, output.Name));
     }
