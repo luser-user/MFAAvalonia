@@ -508,6 +508,7 @@ public partial class TaskQueueViewModel : ViewModelBase
                 : task.InterfaceItem?.Option;
             if (options == null) continue;
 
+            EnsureDefaultOptionValues(options);
             var error = ValidateOptionsRecursive(options);
             if (error != null)
             {
@@ -560,6 +561,16 @@ public partial class TaskQueueViewModel : ViewModelBase
             }
         }
         return null;
+    }
+
+    private static void EnsureDefaultOptionValues(IEnumerable<MaaInterface.MaaInterfaceSelectOption>? options)
+    {
+        if (options == null) return;
+
+        foreach (var option in options)
+        {
+            TaskLoader.SetDefaultOptionValue(MaaProcessor.Interface, option);
+        }
     }
 
     [RelayCommand]
@@ -932,12 +943,17 @@ public partial class TaskQueueViewModel : ViewModelBase
         foreach (var item in Processor.TasksSource)
         {
             // 克隆任务以避免引用问题
-            TaskItemViewModels.Add(item.Clone());
+            var resetItem = item.Clone();
+            resetItem.OwnerViewModel = this;
+            EnsureDefaultOptionValues(resetItem.InterfaceItem?.Option);
+            TaskItemViewModels.Add(resetItem);
         }
 
         // 恢复特殊任务到列表末尾
         foreach (var special in specialTasks)
         {
+            special.OwnerViewModel = this;
+            EnsureDefaultOptionValues(special.InterfaceItem?.Option);
             TaskItemViewModels.Add(special);
         }
 

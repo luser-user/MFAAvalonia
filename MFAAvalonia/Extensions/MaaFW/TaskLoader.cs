@@ -581,38 +581,64 @@ public class TaskLoader(MaaInterface? maaInterface, TaskQueueViewModel taskQueue
 
     public static void SetDefaultOptionValue(MaaInterface? @interface, MaaInterface.MaaInterfaceSelectOption option)
     {
+        SetDefaultOptionValue(@interface, option, new HashSet<string>(StringComparer.Ordinal));
+    }
+
+    private static void SetDefaultOptionValue(
+        MaaInterface? @interface,
+        MaaInterface.MaaInterfaceSelectOption option,
+        HashSet<string> optionPath)
+    {
         if (!(@interface?.Option?.TryGetValue(option.Name ?? string.Empty, out var io) ?? false)) return;
-        var defaultIndex = io.Cases?.FindIndex(c => c.Name == io.DefaultCase) ?? -1;
-        if (defaultIndex != -1 && option.Index == null)
+        var hasName = !string.IsNullOrEmpty(option.Name);
+        if (hasName && !optionPath.Add(option.Name!))
         {
-            option.Index = defaultIndex;
-        }
-        else if (!io.IsInput && !io.IsCheckbox && io.Cases is { Count: > 0 } && option.Index == null)
-        {
-            // 若未显式声明 default_case，UI 会按第 0 个 case 展示，
-            // 数据层也需要同步落成 0，执行合并时才能命中默认分支。
-            option.Index = 0;
-        }
-        if (io.IsInput && io.Inputs != null)
-        {
-            option.Data ??= new Dictionary<string, string?>();
-            foreach (var input in io.Inputs)
-                if (!string.IsNullOrEmpty(input.Name) && !option.Data.ContainsKey(input.Name))
-                    option.Data[input.Name] = input.Default ?? string.Empty;
-        }
-        // checkbox 类型：从 DefaultCases 初始化 SelectedCases
-        if (io.IsCheckbox)
-        {
-            option.SelectedCases ??= new List<string>(io.DefaultCases ?? new List<string>());
+            LoggerHelper.Warning($"检测到循环嵌套的 option，已跳过默认子选项展开：{string.Join(" -> ", optionPath)} -> {option.Name}");
+            return;
         }
 
-        EnsureDefaultSubOptions(@interface, option, io);
+        try
+        {
+            var defaultIndex = io.Cases?.FindIndex(c => c.Name == io.DefaultCase) ?? -1;
+            if (defaultIndex != -1 && option.Index == null)
+            {
+                option.Index = defaultIndex;
+            }
+            else if (!io.IsInput && !io.IsCheckbox && io.Cases is { Count: > 0 } && option.Index == null)
+            {
+                // 若未显式声明 default_case，UI 会按第 0 个 case 展示，
+                // 数据层也需要同步落成 0，执行合并时才能命中默认分支。
+                option.Index = 0;
+            }
+            if (io.IsInput && io.Inputs != null)
+            {
+                option.Data ??= new Dictionary<string, string?>();
+                foreach (var input in io.Inputs)
+                    if (!string.IsNullOrEmpty(input.Name) && !option.Data.ContainsKey(input.Name))
+                        option.Data[input.Name] = input.Default ?? string.Empty;
+            }
+            // checkbox 类型：从 DefaultCases 初始化 SelectedCases
+            if (io.IsCheckbox)
+            {
+                option.SelectedCases ??= new List<string>(io.DefaultCases ?? new List<string>());
+            }
+
+            EnsureDefaultSubOptions(@interface, option, io, optionPath);
+        }
+        finally
+        {
+            if (hasName)
+            {
+                optionPath.Remove(option.Name!);
+            }
+        }
     }
 
     private static void EnsureDefaultSubOptions(
         MaaInterface? @interface,
         MaaInterface.MaaInterfaceSelectOption option,
-        MaaInterface.MaaInterfaceOption interfaceOption)
+        MaaInterface.MaaInterfaceOption interfaceOption,
+        HashSet<string> optionPath)
     {
         if (@interface?.Option == null || interfaceOption.Cases == null || interfaceOption.Cases.Count == 0)
             return;
@@ -634,6 +660,18 @@ public class TaskLoader(MaaInterface? maaInterface, TaskQueueViewModel taskQueue
 
         foreach (var subOptionName in activeSubOptionNames.Distinct())
         {
+            if (string.IsNullOrEmpty(subOptionName))
+            {
+                continue;
+            }
+
+            if (optionPath.Contains(subOptionName))
+            {
+                LoggerHelper.Warning($"检测到循环嵌套的 option，已跳过默认子选项展开：{string.Join(" -> ", optionPath)} -> {subOptionName}");
+                option.SubOptions.RemoveAll(o => o.Name == subOptionName);
+                continue;
+            }
+
             var subOption = option.SubOptions.FirstOrDefault(o => o.Name == subOptionName);
             if (subOption == null)
             {
@@ -644,7 +682,7 @@ public class TaskLoader(MaaInterface? maaInterface, TaskQueueViewModel taskQueue
                 option.SubOptions.Add(subOption);
             }
 
-            SetDefaultOptionValue(@interface, subOption);
+            SetDefaultOptionValue(@interface, subOption, optionPath);
         }
     }
 
