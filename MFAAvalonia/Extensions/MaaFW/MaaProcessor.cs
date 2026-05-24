@@ -415,6 +415,12 @@ public class MaaProcessor
         CommentHandling = CommentHandling.Ignore
     };
 
+    private static Dictionary<string, JToken> DeserializePipelineOverrideJsonc(string json)
+    {
+        var token = JToken.Parse(json, JsoncLoadSettings);
+        return token.ToObject<Dictionary<string, JToken>>() ?? new Dictionary<string, JToken>();
+    }
+
     /// <summary>
     /// 获取 interface 文件路径，优先返回 .jsonc，其次 .json
     /// </summary>
@@ -2959,7 +2965,7 @@ public class MaaProcessor
 
                 if (!string.IsNullOrWhiteSpace(selectAdvanced.PipelineOverride) && selectAdvanced.PipelineOverride != "{}")
                 {
-                    var param = JsonConvert.DeserializeObject<Dictionary<string, JToken>>(selectAdvanced.PipelineOverride);
+                    var param = DeserializePipelineOverrideJsonc(selectAdvanced.PipelineOverride);
                     //       Instance.NodeDictionary = Instance.NodeDictionary.MergeMaaNodes(param);
                     taskModels.Merge(param);
                 }
@@ -3093,7 +3099,7 @@ public class MaaProcessor
 
                 if (!string.IsNullOrWhiteSpace(pipelineOverride) && pipelineOverride != "{}")
                 {
-                    var param = JsonConvert.DeserializeObject<Dictionary<string, JToken>>(pipelineOverride);
+                    var param = DeserializePipelineOverrideJsonc(pipelineOverride);
                     taskModels.Merge(param);
                 }
             }
