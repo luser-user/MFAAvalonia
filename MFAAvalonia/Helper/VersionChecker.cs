@@ -2933,6 +2933,7 @@ public static class VersionChecker
         if (fileName.Equals("MFAAvalonia.dll", StringComparison.OrdinalIgnoreCase)
             || fileName.Equals("MFAAvalonia.deps.json", StringComparison.OrdinalIgnoreCase)
             || fileName.Equals("MFAAvalonia.runtimeconfig.json", StringComparison.OrdinalIgnoreCase)
+            || IsCurrentProcessExecutableFileName(fileName)
             || fileName.Equals("MFAUpdater", StringComparison.OrdinalIgnoreCase)
             || fileName.Equals("MFAUpdater.exe", StringComparison.OrdinalIgnoreCase))
             return true;
@@ -2942,6 +2943,28 @@ public static class VersionChecker
             return true;
 
         return false;
+    }
+
+    private static bool IsCurrentProcessExecutableFileName(string fileName)
+    {
+        if (string.IsNullOrWhiteSpace(fileName))
+            return false;
+
+        try
+        {
+            var currentProcessPath = Process.GetCurrentProcess().MainModule?.FileName ?? string.Empty;
+            if (string.IsNullOrWhiteSpace(currentProcessPath))
+                currentProcessPath = Environment.ProcessPath ?? string.Empty;
+
+            if (string.IsNullOrWhiteSpace(currentProcessPath))
+                return false;
+
+            return fileName.Equals(Path.GetFileName(currentProcessPath), StringComparison.OrdinalIgnoreCase);
+        }
+        catch
+        {
+            return false;
+        }
     }
 
     private static bool TryGetSafeUpdateTargetPath(string baseDirectory, string relativePath, out string fullPath)
