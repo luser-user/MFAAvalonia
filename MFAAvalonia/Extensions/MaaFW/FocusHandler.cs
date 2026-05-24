@@ -35,6 +35,7 @@ public class FocusHandler
 {
     private const double ToastMarkdownMaxHeight = 220;
     private const double DialogMarkdownMaxHeight = 520;
+    private const double NotificationTitleMarkdownMaxHeight = 44;
     private const double NotificationMarkdownMaxHeight = 260;
 
     private AutoInitDictionary autoInitDictionary;
@@ -226,7 +227,7 @@ public class FocusHandler
                         ToastHelper.CreateToastByType(
                                 Avalonia.Controls.Notifications.NotificationType.Information,
                                 LangKeys.Tip.ToLocalization(),
-                                CreateMarkdownContent(displayText, ToastMarkdownMaxHeight))
+                                CreateFocusMarkdownContent(displayText, ToastMarkdownMaxHeight))
                             .Queue());
                     break;
                 case "notification":
@@ -235,7 +236,7 @@ public class FocusHandler
                         ToastNotification.Instance.AddToast(new NotificationView(4000)
                         {
                             TitleText = LangKeys.Tip.ToLocalization(),
-                            MessageText = CreateMarkdownContent(displayText, NotificationMarkdownMaxHeight)
+                            MessageText = CreateFocusMarkdownContent(displayText, NotificationMarkdownMaxHeight)
                         });
                         ToastNotification.PlayNotificationSound();
                     });
@@ -246,7 +247,7 @@ public class FocusHandler
                     {
                         await SukiMessageBox.ShowDialog(new SukiMessageBoxHost
                         {
-                            Content = CreateMarkdownContent(displayText, DialogMarkdownMaxHeight),
+                            Content = CreateFocusMarkdownContent(displayText, DialogMarkdownMaxHeight),
                             ActionButtonsPreset = SukiMessageBoxButtons.OK,
                         }, new SukiMessageBoxOptions
                         {
@@ -262,7 +263,7 @@ public class FocusHandler
                     {
                         await SukiMessageBox.ShowDialog(new SukiMessageBoxHost
                         {
-                            Content = CreateMarkdownContent(displayText, DialogMarkdownMaxHeight),
+                            Content = CreateFocusMarkdownContent(displayText, DialogMarkdownMaxHeight),
                             ActionButtonsPreset = SukiMessageBoxButtons.OK,
                         }, new SukiMessageBoxOptions
                         {
@@ -313,11 +314,11 @@ public class FocusHandler
                 }
                 if (focus.Toast is { Count: > 0 })
                 {
-                    var (rawTitle, _) = ParseColorText(focus.Toast[0]);
-                    var (rawContent, _) = focus.Toast.Count >= 2 ? ParseColorText(focus.Toast[1]) : ("", "");
-                    var title = ResolveLegacyFocusText(rawTitle);
-                    var content = ResolveLegacyFocusText(rawContent);
-                    ToastNotification.Show(title, CreateMarkdownContent(content, NotificationMarkdownMaxHeight));
+                    var title = ResolveLegacyFocusText(focus.Toast[0]);
+                    var content = focus.Toast.Count >= 2 ? ResolveLegacyFocusText(focus.Toast[1]) : "";
+                    ToastNotification.Show(
+                        CreateFocusMarkdownContent(title, NotificationTitleMarkdownMaxHeight),
+                        CreateFocusMarkdownContent(content, NotificationMarkdownMaxHeight));
                 }
                 if (focus.Start != null)
                 {
@@ -433,6 +434,27 @@ public class FocusHandler
                || input.StartsWith("./", StringComparison.Ordinal)
                || input.StartsWith("../", StringComparison.Ordinal)
                || Path.HasExtension(input);
+    }
+
+    private static Control CreateFocusMarkdownContent(string markdown, double maxHeight)
+    {
+        return CreateMarkdownContent(TaskQueueView.ConvertCustomMarkup(markdown), EstimateMarkdownMaxHeight(markdown, maxHeight));
+    }
+
+    private static double EstimateMarkdownMaxHeight(string markdown, double maxHeight)
+    {
+        if (string.IsNullOrWhiteSpace(markdown))
+            return 1;
+
+        if (markdown.Contains("![", StringComparison.Ordinal)
+            || markdown.Contains("<img", StringComparison.OrdinalIgnoreCase)
+            || markdown.Contains("```", StringComparison.Ordinal)
+            || markdown.Contains('|', StringComparison.Ordinal))
+            return maxHeight;
+
+        var lineCount = Regex.Matches(markdown, @"\r\n|\r|\n").Count + 1;
+        var estimatedHeight = 18 + lineCount * 24;
+        return Math.Min(maxHeight, estimatedHeight);
     }
 
     private static Control CreateMarkdownContent(string markdown, double maxHeight)
