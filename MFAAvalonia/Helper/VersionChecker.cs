@@ -158,6 +158,11 @@ public static class VersionChecker
 
     public static void Check()
     {
+        _ = CheckAsync();
+    }
+
+    public static Task CheckAsync()
+    {
         var config = new
         {
             AutoUpdateResource = ConfigurationManager.Current.GetValue(ConfigurationKeys.EnableAutoUpdateResource, false),
@@ -185,7 +190,7 @@ public static class VersionChecker
         //     AddMFACheckTask();
         // }
 
-        TaskManager.RunTaskAsync(async () => await ExecuteTasksAsync(),
+        return TaskManager.RunTaskAsync(async () => await ExecuteTasksAsync(),
             () => ToastNotification.Show("自动更新时发生错误！"), "启动检测");
     }
 
@@ -1973,10 +1978,16 @@ public static class VersionChecker
             while (Queue.TryDequeue(out var task))
             {
                 await _queueLock.WaitAsync();
-                LoggerHelper.Info($"开始执行更新任务：名称={task.Name}");
-                await task.Action();
-                LoggerHelper.Info($"更新任务完成：名称={task.Name}");
-                _queueLock.Release();
+                try
+                {
+                    LoggerHelper.Info($"开始执行更新任务：名称={task.Name}");
+                    await task.Action();
+                    LoggerHelper.Info($"更新任务完成：名称={task.Name}");
+                }
+                finally
+                {
+                    _queueLock.Release();
+                }
             }
         }
         finally

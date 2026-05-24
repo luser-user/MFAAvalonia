@@ -3614,7 +3614,7 @@ public class MaaProcessor
         {
             TaskQueue.Enqueue(CreateMFATask(LangKeys.CheckUpdate.ToLocalization(), async () =>
             {
-                VersionChecker.Check();
+                await VersionChecker.CheckAsync();
             }, isUpdateRelated: true));
         }
     }
