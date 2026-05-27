@@ -487,19 +487,17 @@ public static class MFAExtensions
     // }
     public static Bitmap DrawRectangle(this Bitmap sourceBitmap, MaaRectBuffer rect, IBrush color, double thickness = 1.5)
     {
+        return sourceBitmap.DrawRectangle(new Rect(rect.X, rect.Y, rect.Width, rect.Height), color, thickness);
+    }
+
+    public static Bitmap DrawRectangle(this Bitmap sourceBitmap, Rect rect, IBrush color, double thickness = 1.5)
+    {
         if (sourceBitmap == null)
             throw new ArgumentNullException(nameof(sourceBitmap));
 
-        // 提前获取需要的值，避免在异步操作中访问可能已释放的对象
         var bitmapSize = sourceBitmap.Size;
         var pixelSize = sourceBitmap.PixelSize;
         var dpi = sourceBitmap.Dpi;
-
-        // 提前获取矩形的值，因为 MaaRectBuffer 可能会被释放
-        var rectX = rect.X;
-        var rectY = rect.Y;
-        var rectWidth = rect.Width;
-        var rectHeight = rect.Height;
 
         var renderBitmap = new RenderTargetBitmap(pixelSize, dpi);
 
@@ -519,7 +517,7 @@ public static class MFAExtensions
             };
 
             // 3. 绘制矩形边框
-            context.DrawRectangle(pen, new Rect(rectX, rectY, rectWidth, rectHeight));
+            context.DrawRectangle(pen, rect);
         }
         catch (Exception ex)
         {

@@ -1677,6 +1677,7 @@ public class MaaProcessor
                     if (recoId > 0)
                     {
                         Bitmap? bitmapToSet = null;
+                        global::Avalonia.Rect? drawRect = null;
                         try
                         {
                             //使用 using 确保资源正确释放
@@ -1694,13 +1695,7 @@ public class MaaProcessor
                             {
                                 if (hit)
                                 {
-                                    var newBitmap = bitmap.DrawRectangle(rect, Brushes.LightGreen, 1.5f);
-                                    // 如果 DrawRectangle 返回了新的 Bitmap，释放原始的
-                                    if (!ReferenceEquals(newBitmap, bitmap))
-                                    {
-                                        bitmap.Dispose();
-                                    }
-                                    bitmap = newBitmap;
+                                    drawRect = new global::Avalonia.Rect(rect.X, rect.Y, rect.Width, rect.Height);
                                 }
                                 bitmapToSet = bitmap;
                             }
@@ -1716,13 +1711,26 @@ public class MaaProcessor
                         if (bitmapToSet != null)
                         {
                             var finalBitmap = bitmapToSet;
+                            var finalDrawRect = drawRect;
                             DispatcherHelper.PostOnMainThread(() =>
                             {
                                 if (MaaProcessorManager.Instance.Current == this)
                                 {
+                                    var imageToSet = finalBitmap;
+                                    if (finalDrawRect.HasValue)
+                                    {
+                                        var newBitmap = finalBitmap.DrawRectangle(finalDrawRect.Value, Brushes.LightGreen, 1.5f);
+                                        // 如果 DrawRectangle 返回了新的 Bitmap，释放原始的
+                                        if (!ReferenceEquals(newBitmap, finalBitmap))
+                                        {
+                                            finalBitmap.Dispose();
+                                        }
+                                        imageToSet = newBitmap;
+                                    }
+
                                     // 释放旧的截图
                                     var oldImage = Instances.ScreenshotViewModel.ScreenshotImage;
-                                    Instances.ScreenshotViewModel.ScreenshotImage = finalBitmap;
+                                    Instances.ScreenshotViewModel.ScreenshotImage = imageToSet;
                                     Instances.ScreenshotViewModel.TaskName = name;
                                     oldImage?.Dispose();
                                 }
@@ -1741,6 +1749,7 @@ public class MaaProcessor
                     if (actionId > 0)
                     {
                         Bitmap? bitmapToSet = null;
+                        global::Avalonia.Rect? drawRect = null;
                         try
                         {
                             // 使用 using 确保资源正确释放
@@ -1753,13 +1762,7 @@ public class MaaProcessor
                             {
                                 if (isSucceeded)
                                 {
-                                    var newBitmap = bitmap.DrawRectangle(rect, Brushes.LightGreen, 1.5f);
-                                    // 如果 DrawRectangle 返回了新的 Bitmap，释放原始的
-                                    if (!ReferenceEquals(newBitmap, bitmap))
-                                    {
-                                        bitmap.Dispose();
-                                    }
-                                    bitmap = newBitmap;
+                                    drawRect = new global::Avalonia.Rect(rect.X, rect.Y, rect.Width, rect.Height);
                                 }
                                 bitmapToSet = bitmap;
                             }
@@ -1775,13 +1778,26 @@ public class MaaProcessor
                         if (bitmapToSet != null)
                         {
                             var finalBitmap = bitmapToSet;
+                            var finalDrawRect = drawRect;
                             DispatcherHelper.PostOnMainThread(() =>
                             {
                                 if (MaaProcessorManager.Instance.Current == this)
                                 {
+                                    var imageToSet = finalBitmap;
+                                    if (finalDrawRect.HasValue)
+                                    {
+                                        var newBitmap = finalBitmap.DrawRectangle(finalDrawRect.Value, Brushes.LightGreen, 1.5f);
+                                        // 如果 DrawRectangle 返回了新的 Bitmap，释放原始的
+                                        if (!ReferenceEquals(newBitmap, finalBitmap))
+                                        {
+                                            finalBitmap.Dispose();
+                                        }
+                                        imageToSet = newBitmap;
+                                    }
+
                                     // 释放旧的截图
                                     var oldImage = Instances.ScreenshotViewModel.ScreenshotImage;
-                                    Instances.ScreenshotViewModel.ScreenshotImage = finalBitmap;
+                                    Instances.ScreenshotViewModel.ScreenshotImage = imageToSet;
                                     Instances.ScreenshotViewModel.TaskName = name;
                                     oldImage?.Dispose();
                                 }
