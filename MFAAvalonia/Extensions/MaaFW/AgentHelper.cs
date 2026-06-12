@@ -298,8 +298,8 @@ public static class AgentHelper
                     try
                     {
                         ctx.Client = instanceConfig.GetValue(ConfigurationKeys.AgentTcpMode, false)
-                            ? MaaAgentClient.Create(identifier, tasker)
-                            : MaaAgentClient.CreateTcp(tasker);
+                            ? MaaAgentClient.CreateTcp(tasker)
+                            : MaaAgentClient.Create(identifier, tasker);
                         timeOut = agentConfig.Timeout ?? -1;
                         if (timeOut > 0)
                             ctx.Client.SetTimeout(TimeSpan.FromSeconds(timeOut));
