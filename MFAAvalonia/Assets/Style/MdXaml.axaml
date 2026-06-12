@@ -6,10 +6,11 @@
                     xmlns:mdsvg="https://github.com/whistyun/Markdown.Avalonia.Svg"
                     xmlns:avalonia="https://github.com/whistyun/Markdown.Avalonia.Tight"
                     xmlns:syntaxHigh="clr-namespace:Markdown.Avalonia.SyntaxHigh;assembly=Markdown.Avalonia.SyntaxHigh"
-                    xmlns:helper="clr-namespace:MFAAvalonia.Helper"><mdxaml:MdAvPlugins x:Key="MdXamlPlugin">
+                    xmlns:helper="clr-namespace:MFAAvalonia.Helper">
+    <mdxaml:MdAvPlugins x:Key="MdXamlPlugin">
         <html:HtmlPlugin />
         <mdsvg:SvgFormat />
-        <avalonia:ChatAISetup/>
+        <avalonia:ChatAISetup />
         <syntaxHigh:SyntaxHighlight />
         <mdxaml:MdAvPlugins.PathResolver>
             <helper:CustomPathResolver />

@@ -1215,14 +1215,19 @@ public static class VersionChecker
                     await Task.Run(() =>
                     {
                         cancellationToken.ThrowIfCancellationRequested();
-                        if (File.Exists(targetFile))
+                        var tempTarget = targetFile + ".pending_update";
+                        try
                         {
-                            DeleteFileWithBackup(targetFile);
-                            if (File.Exists(targetFile))
-                                throw new IOException($"Unable to delete/backup existing file: {targetFile}");
+                            File.Copy(item.SourceFile, tempTarget, overwrite: true);
                         }
-
-                        File.Copy(item.SourceFile, targetFile, overwrite: true);
+                        catch
+                        {
+                            if (File.Exists(tempTarget)) File.Delete(tempTarget);
+                            throw;
+                        }
+                        if (File.Exists(targetFile))
+                            DeleteFileWithBackup(targetFile);
+                        File.Move(tempTarget, targetFile, overwrite: true);
                     }, cancellationToken);
 
                     File.SetAttributes(targetFile, FileAttributes.Normal);
@@ -1329,19 +1334,19 @@ public static class VersionChecker
                     await Task.Run(() =>
                     {
                         cancellationToken.ThrowIfCancellationRequested();
-
-                        // 尝试备份/删除目标文件
-                        if (File.Exists(targetFile))
+                        var tempTarget = targetFile + ".pending_update";
+                        try
                         {
-                            DeleteFileWithBackup(targetFile);
-                            // 如果DeleteFileWithBackup失败（文件仍存在），手动抛出异常以触发重试
-                            if (File.Exists(targetFile))
-                            {
-                                throw new IOException($"Unable to delete/backup existing file: {targetFile}");
-                            }
+                            File.Copy(sourceFile, tempTarget, overwrite: true);
                         }
-
-                        File.Copy(sourceFile, targetFile, overwrite: true);
+                        catch
+                        {
+                            if (File.Exists(tempTarget)) File.Delete(tempTarget);
+                            throw;
+                        }
+                        if (File.Exists(targetFile))
+                            DeleteFileWithBackup(targetFile);
+                        File.Move(tempTarget, targetFile, overwrite: true);
                     }, cancellationToken);
 
                     // 12. 设置目标文件为普通属性（清除只读/隐藏等限制）

@@ -218,7 +218,7 @@
     <Style Selector=".Markdown_Avalonia_MarkdownViewer StackPanel.Blockquote">
         <Setter Property="Margin" Value="5,0,5,0" />
     </Style>
-    
+
     <!-- ==================== 超链接样式 ==================== -->
     <Style Selector=".Markdown_Avalonia_MarkdownViewer ctxt|CHyperlink">
         <Setter Property="IsUnderline" Value="True" />

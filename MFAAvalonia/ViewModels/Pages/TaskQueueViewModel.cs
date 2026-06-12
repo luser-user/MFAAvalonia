@@ -599,7 +599,7 @@ public partial class TaskQueueViewModel : ViewModelBase
         using var _ = BeginUiLogScope("OpenAddTaskDialog");
         LoggerHelper.UserAction("打开添加任务对话框", DescribeCurrentSelection(),
             operation: "OpenAddTaskDialog", instanceId: Processor.InstanceId, instanceName: InstanceName);
-        Instances.DialogManager.CreateDialog().WithTitle(LangKeys.AdbEditor.ToLocalization()).WithViewModel(dialog => new AddTaskDialogViewModel(dialog, Processor.TasksSource)).TryShow();
+        Instances.DialogManager.CreateDialog().WithTitle(LangKeys.AdbEditor.ToLocalization()).WithViewModel(dialog => new AddTaskDialogViewModel(dialog, Processor.TasksSource, this)).TryShow();
     }
 
     /// <summary>
