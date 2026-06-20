@@ -2868,7 +2868,7 @@ public class MaaProcessor
     {
         var taskItems = ViewModel?.TaskItemViewModels
             .Where(task => AddTaskDialogViewModel.IsMultiRoleLoopTask(task)
-                           || MultiRoleLoopPlanner.IsSwitchAccountTask(task))
+                           || MultiRoleLoopPlanner.IsSwitchRoleTask(task))
             .ToList() ?? [];
 
         DispatcherHelper.RunOnMainThread(() =>

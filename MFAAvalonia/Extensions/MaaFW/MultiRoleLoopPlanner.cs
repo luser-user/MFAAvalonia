@@ -34,7 +34,7 @@ internal sealed class MultiRoleLoopPlan
 
 internal static class MultiRoleLoopPlanner
 {
-    internal const string SwitchAccountTaskName = "切换账号";
+    internal const string SwitchRoleTaskName = "切换角色";
 
     public static MultiRoleLoopPlan Create(IReadOnlyList<DragItemViewModel> tasks, bool enableLoop)
     {
@@ -64,7 +64,7 @@ internal static class MultiRoleLoopPlanner
         var markerIndex = taskList.IndexOf(marker);
         var switchTasks = taskList
             .Skip(markerIndex + 1)
-            .Where(IsSwitchAccountTask)
+            .Where(IsSwitchRoleTask)
             .ToList();
 
         if (switchTasks.Count == 0)
@@ -114,11 +114,11 @@ internal static class MultiRoleLoopPlanner
         };
     }
 
-    public static bool IsSwitchAccountTask(DragItemViewModel task)
+    public static bool IsSwitchRoleTask(DragItemViewModel task)
     {
         return string.Equals(
             task.InterfaceItem?.Name,
-            SwitchAccountTaskName,
+            SwitchRoleTaskName,
             StringComparison.Ordinal);
     }
 
