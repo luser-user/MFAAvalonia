@@ -2111,7 +2111,7 @@ Please do not copy only the main executable by itself.</value>
     <value>Multi-role loop</value>
   </data>
   <data name="SpecialTask_MultiRoleLoopDesc" xml:space="preserve">
-    <value>Repeats tasks after this marker and before "Switch Account". "Switch Account" runs in the first N-1 rounds and is skipped in the final round.</value>
+    <value>Repeats tasks after this marker and before "Switch Role". "Switch Role" runs in the first N-1 rounds and is skipped in the final round.</value>
   </data>
   <data name="SpecialTask_MultiRoleLoopCount" xml:space="preserve">
     <value>Loop count</value>
@@ -2120,13 +2120,13 @@ Please do not copy only the main executable by itself.</value>
     <value>Only one enabled "Multi-role loop" task is allowed.</value>
   </data>
   <data name="MultiRoleLoopErrorMissingSwitch" xml:space="preserve">
-    <value>An enabled "Switch Account" task is required after "Multi-role loop".</value>
+    <value>An enabled "Switch Role" task is required after "Multi-role loop".</value>
   </data>
   <data name="MultiRoleLoopErrorMultipleSwitches" xml:space="preserve">
-    <value>Only one enabled "Switch Account" task is allowed after "Multi-role loop".</value>
+    <value>Only one enabled "Switch Role" task is allowed after "Multi-role loop".</value>
   </data>
   <data name="MultiRoleLoopErrorEmptyBody" xml:space="preserve">
-    <value>At least one enabled task is required between "Multi-role loop" and "Switch Account".</value>
+    <value>At least one enabled task is required between "Multi-role loop" and "Switch Role".</value>
   </data>
   <data name="MultiRoleLoopErrorInvalidCount" xml:space="preserve">
     <value>The multi-role loop count must be between 1 and 8.</value>

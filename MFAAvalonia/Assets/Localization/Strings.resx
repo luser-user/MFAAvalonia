@@ -2121,7 +2121,7 @@
     <value>多角色循环</value>
   </data>
   <data name="SpecialTask_MultiRoleLoopDesc" xml:space="preserve">
-    <value>设置从此任务之后到“切换账号”之前的任务循环执行次数。前 N-1 轮执行“切换账号”，最后一轮跳过。</value>
+    <value>设置从此任务之后到“切换角色”之前的任务循环执行次数。前 N-1 轮执行“切换角色”，最后一轮跳过。</value>
   </data>
   <data name="SpecialTask_MultiRoleLoopCount" xml:space="preserve">
     <value>循环次数</value>
@@ -2130,13 +2130,13 @@
     <value>只能启用一个“多角色循环”任务。</value>
   </data>
   <data name="MultiRoleLoopErrorMissingSwitch" xml:space="preserve">
-    <value>“多角色循环”之后必须有一个已勾选的“切换账号”任务。</value>
+    <value>“多角色循环”之后必须有一个已勾选的“切换角色”任务。</value>
   </data>
   <data name="MultiRoleLoopErrorMultipleSwitches" xml:space="preserve">
-    <value>“多角色循环”之后只能有一个已勾选的“切换账号”任务。</value>
+    <value>“多角色循环”之后只能有一个已勾选的“切换角色”任务。</value>
   </data>
   <data name="MultiRoleLoopErrorEmptyBody" xml:space="preserve">
-    <value>“多角色循环”和“切换账号”之间至少需要一个已勾选任务。</value>
+    <value>“多角色循环”和“切换角色”之间至少需要一个已勾选任务。</value>
   </data>
   <data name="MultiRoleLoopErrorInvalidCount" xml:space="preserve">
     <value>多角色循环次数必须为 1～8。</value>
