@@ -2095,6 +2095,33 @@
   <data name="InstanceDropdownJustNow" xml:space="preserve">
     <value>剛剛</value>
   </data>
+  <data name="SpecialTask_MultiRoleLoop" xml:space="preserve">
+    <value>多角色循環</value>
+  </data>
+  <data name="SpecialTask_MultiRoleLoopDesc" xml:space="preserve">
+    <value>設定從此任務之後到「切換帳號」之前的任務循環執行次數。前 N-1 輪執行「切換帳號」，最後一輪略過。</value>
+  </data>
+  <data name="SpecialTask_MultiRoleLoopCount" xml:space="preserve">
+    <value>循環次數</value>
+  </data>
+  <data name="MultiRoleLoopErrorMultipleMarkers" xml:space="preserve">
+    <value>只能啟用一個「多角色循環」任務。</value>
+  </data>
+  <data name="MultiRoleLoopErrorMissingSwitch" xml:space="preserve">
+    <value>「多角色循環」之後必須有一個已勾選的「切換帳號」任務。</value>
+  </data>
+  <data name="MultiRoleLoopErrorMultipleSwitches" xml:space="preserve">
+    <value>「多角色循環」之後只能有一個已勾選的「切換帳號」任務。</value>
+  </data>
+  <data name="MultiRoleLoopErrorEmptyBody" xml:space="preserve">
+    <value>「多角色循環」和「切換帳號」之間至少需要一個已勾選任務。</value>
+  </data>
+  <data name="MultiRoleLoopErrorInvalidCount" xml:space="preserve">
+    <value>多角色循環次數必須為 1～8。</value>
+  </data>
+  <data name="MultiRoleLoopRoundLog" xml:space="preserve">
+    <value>多角色循環：第 {0}/{1} 輪</value>
+  </data>
 </root>
 
 

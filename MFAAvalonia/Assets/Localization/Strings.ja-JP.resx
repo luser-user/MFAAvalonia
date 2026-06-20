@@ -2102,4 +2102,31 @@
   <data name="RemoveTimer" xml:space="preserve">
         <value>Remove Timer</value>
     </data>
+  <data name="SpecialTask_MultiRoleLoop" xml:space="preserve">
+    <value>複数キャラクターループ</value>
+  </data>
+  <data name="SpecialTask_MultiRoleLoopDesc" xml:space="preserve">
+    <value>このタスクの後から「切换账号」の前までを繰り返します。最初の N-1 周では「切换账号」を実行し、最後の周ではスキップします。</value>
+  </data>
+  <data name="SpecialTask_MultiRoleLoopCount" xml:space="preserve">
+    <value>ループ回数</value>
+  </data>
+  <data name="MultiRoleLoopErrorMultipleMarkers" xml:space="preserve">
+    <value>有効な「複数キャラクターループ」は1つだけ配置できます。</value>
+  </data>
+  <data name="MultiRoleLoopErrorMissingSwitch" xml:space="preserve">
+    <value>「複数キャラクターループ」の後に有効な「切换账号」タスクが必要です。</value>
+  </data>
+  <data name="MultiRoleLoopErrorMultipleSwitches" xml:space="preserve">
+    <value>「複数キャラクターループ」の後に配置できる有効な「切换账号」タスクは1つだけです。</value>
+  </data>
+  <data name="MultiRoleLoopErrorEmptyBody" xml:space="preserve">
+    <value>「複数キャラクターループ」と「切换账号」の間に少なくとも1つの有効なタスクが必要です。</value>
+  </data>
+  <data name="MultiRoleLoopErrorInvalidCount" xml:space="preserve">
+    <value>ループ回数は1～8で指定してください。</value>
+  </data>
+  <data name="MultiRoleLoopRoundLog" xml:space="preserve">
+    <value>複数キャラクターループ：{0}/{1} 周目</value>
+  </data>
 </root>
