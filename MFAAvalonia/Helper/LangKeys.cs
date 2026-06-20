@@ -685,6 +685,15 @@ public static class LangKeys
 	public static readonly string RemoveTimer = "RemoveTimer";
 	public static readonly string TimerStopConnectedProcess = "TimerStopConnectedProcess";
 	public static readonly string TimerStopMFA = "TimerStopMFA";
+	public static readonly string SpecialTask_MultiRoleLoop = "SpecialTask_MultiRoleLoop";
+	public static readonly string SpecialTask_MultiRoleLoopDesc = "SpecialTask_MultiRoleLoopDesc";
+	public static readonly string SpecialTask_MultiRoleLoopCount = "SpecialTask_MultiRoleLoopCount";
+	public static readonly string MultiRoleLoopErrorMultipleMarkers = "MultiRoleLoopErrorMultipleMarkers";
+	public static readonly string MultiRoleLoopErrorMissingSwitch = "MultiRoleLoopErrorMissingSwitch";
+	public static readonly string MultiRoleLoopErrorMultipleSwitches = "MultiRoleLoopErrorMultipleSwitches";
+	public static readonly string MultiRoleLoopErrorEmptyBody = "MultiRoleLoopErrorEmptyBody";
+	public static readonly string MultiRoleLoopErrorInvalidCount = "MultiRoleLoopErrorInvalidCount";
+	public static readonly string MultiRoleLoopRoundLog = "MultiRoleLoopRoundLog";
 	
 }
 

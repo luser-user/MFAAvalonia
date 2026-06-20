@@ -19,6 +19,7 @@ namespace MFAAvalonia.ViewModels.UsersControls.Settings;
 public partial class AddTaskDialogViewModel : ViewModelBase, IDisposable
 {
     private const string CommonGroupName = "__common__";
+    internal const string MultiRoleLoopActionName = "MultiRoleLoopAction";
     private string _currentSearchKey = string.Empty;
 
     /// <summary>
@@ -33,6 +34,7 @@ public partial class AddTaskDialogViewModel : ViewModelBase, IDisposable
         "KillProcessAction",
         "ComputerOperationAction",
         "WebhookAction",
+        MultiRoleLoopActionName,
     };
 
     private ObservableCollection<AddTaskItemViewModel> _items;
@@ -73,6 +75,7 @@ public partial class AddTaskDialogViewModel : ViewModelBase, IDisposable
             new() { Name = LangKeys.SpecialTask_KillProcess.ToLocalization(), IsSpecialTask = true, SpecialActionName = "KillProcessAction", SpecialIcon = "⛔" },
             new() { Name = LangKeys.SpecialTask_ComputerOperation.ToLocalization(), IsSpecialTask = true, SpecialActionName = "ComputerOperationAction", SpecialIcon = "⚡" },
             new() { Name = LangKeys.SpecialTask_Webhook.ToLocalization(), IsSpecialTask = true, SpecialActionName = "WebhookAction", SpecialIcon = "🔔" },
+            new() { Name = LangKeys.SpecialTask_MultiRoleLoop.ToLocalization(), IsSpecialTask = true, SpecialActionName = MultiRoleLoopActionName, SpecialIcon = "🔁" },
         };
 
         LanguageHelper.LanguageChanged += OnLanguageChanged;
@@ -160,8 +163,14 @@ public partial class AddTaskDialogViewModel : ViewModelBase, IDisposable
             "KillProcessAction" => new JObject { ["kill_self_process"] = true, ["process_name"] = "" },
             "ComputerOperationAction" => new JObject { ["operation"] = "shutdown" },
             "WebhookAction" => new JObject { ["url"] = "", ["method"] = "GET", ["body"] = "", ["content_type"] = "application/json" },
+            MultiRoleLoopActionName => new JObject { ["count"] = 1 },
             _ => new JObject()
         };
+    }
+
+    internal static bool IsMultiRoleLoopTask(DragItemViewModel? task)
+    {
+        return string.Equals(task?.InterfaceItem?.Entry, MultiRoleLoopActionName, StringComparison.Ordinal);
     }
 
     private static DragItemViewModel? CreateSpecialTask(AddTaskItemViewModel special)
@@ -209,6 +218,7 @@ public partial class AddTaskDialogViewModel : ViewModelBase, IDisposable
             "KillProcessAction" => LangKeys.SpecialTask_KillProcessDesc,
             "ComputerOperationAction" => LangKeys.SpecialTask_ComputerOperationDesc,
             "WebhookAction" => LangKeys.SpecialTask_WebhookDesc,
+            MultiRoleLoopActionName => LangKeys.SpecialTask_MultiRoleLoopDesc,
             _ => LangKeys.SpecialTask
         };
     }

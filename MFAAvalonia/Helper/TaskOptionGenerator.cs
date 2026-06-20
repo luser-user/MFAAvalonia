@@ -1321,7 +1321,48 @@ public class TaskOptionGenerator(TaskQueueViewModel viewModel, Action saveConfig
             case "WebhookAction":
                 AddWebhookOptions(panel, dragItem);
                 break;
+            case AddTaskDialogViewModel.MultiRoleLoopActionName:
+                AddMultiRoleLoopOptions(panel, dragItem);
+                break;
         }
+    }
+
+    /// <summary>
+    /// 多角色循环 - count (NumericUpDown)
+    /// </summary>
+    private void AddMultiRoleLoopOptions(StackPanel panel, DragItemViewModel dragItem)
+    {
+        var param = GetActionParam(dragItem);
+        var grid = CreateSpecialTaskGrid(isFirstRow: true);
+
+        var label = CreateLabelPanel(LangKeys.SpecialTask_MultiRoleLoopCount, null, null, useI18n: true);
+        label.Margin = new Thickness(10, 0, 0, 0);
+        Grid.SetColumn(label, 0);
+        grid.Children.Add(label);
+
+        var numericUpDown = new NumericUpDown
+        {
+            Value = Math.Clamp((int?)param["count"] ?? 1, 1, 8),
+            Minimum = 1,
+            Maximum = 8,
+            Increment = 1,
+            MinWidth = 120,
+            Margin = new Thickness(0, 2, 0, 2),
+            VerticalAlignment = VerticalAlignment.Center,
+            HorizontalAlignment = HorizontalAlignment.Stretch,
+            Classes = { "TaskOptionLikeCombo" },
+        };
+        BindIdleEnabled(numericUpDown);
+        numericUpDown.ValueChanged += (_, _) =>
+        {
+            param["count"] = Math.Clamp(Convert.ToInt32(numericUpDown.Value ?? 1), 1, 8);
+            UpdateActionParam(dragItem, param);
+        };
+
+        Grid.SetColumn(numericUpDown, 1);
+        AddResponsiveBehavior(grid, label, numericUpDown);
+        grid.Children.Add(numericUpDown);
+        panel.Children.Add(grid);
     }
 
     /// <summary>

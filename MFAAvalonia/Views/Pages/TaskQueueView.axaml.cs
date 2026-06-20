@@ -17,6 +17,7 @@ using MFAAvalonia.Helper;
 using MFAAvalonia.Helper.ValueType;
 using MFAAvalonia.ViewModels.Pages;
 using MFAAvalonia.ViewModels.UsersControls;
+using MFAAvalonia.ViewModels.UsersControls.Settings;
 using MFAAvalonia.Views.UserControls;
 using System;
 using System.Collections.Concurrent;
@@ -470,7 +471,8 @@ public partial class TaskQueueView : UserControl
         var menuItem = sender as MenuItem;
         if (menuItem?.DataContext is DragItemViewModel taskItemViewModel && DataContext is TaskQueueViewModel vm)
         {
-            if (taskItemViewModel.IsResourceOptionItem)
+            if (taskItemViewModel.IsResourceOptionItem
+                || AddTaskDialogViewModel.IsMultiRoleLoopTask(taskItemViewModel))
                 return;
             vm.Processor.Start([taskItemViewModel], ignoreCheckedState: true);
         }
@@ -570,6 +572,7 @@ public partial class TaskQueueView : UserControl
     private static void ApplyTaskMenuEnabledStates(ContextMenu menu, DragItemViewModel? currentItem)
     {
         var isResourceOptionItem = currentItem?.IsResourceOptionItem == true;
+        var isMultiRoleLoopTask = AddTaskDialogViewModel.IsMultiRoleLoopTask(currentItem);
         var canRunNow = !isResourceOptionItem && Instances.RootViewModel.Idle;
         var canEdit = !isResourceOptionItem;
 
@@ -579,7 +582,7 @@ public partial class TaskQueueView : UserControl
         if (items is not { Count: >= 6 })
             return;
 
-        items[0].IsEnabled = canRunNow;
+        items[0].IsEnabled = canRunNow && !isMultiRoleLoopTask;
         items[1].IsEnabled = canRunNow;
         items[2].IsEnabled = canEdit;
         items[3].IsEnabled = canEdit;

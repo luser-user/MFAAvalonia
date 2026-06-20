@@ -11,6 +11,7 @@ using MFAAvalonia.Helper.ValueType;
 using MFAAvalonia.Helper.Converters;
 using MFAAvalonia.ViewModels.Other;
 using MFAAvalonia.ViewModels.Pages;
+using MFAAvalonia.ViewModels.UsersControls.Settings;
 using MFAAvalonia.Views.Windows;
 using Microsoft.WindowsAPICodePack.Taskbar;
 using Newtonsoft.Json;
@@ -2823,6 +2824,7 @@ public class MaaProcessor
     private Task StartInternal(List<DragItemViewModel>? dragItemViewModels, bool onlyStart, bool checkUpdate, bool ignoreCheckedState = false)
     {
         using var logScope = BeginInstanceLogScope("StartTask", "Worker");
+        var isFullTaskStart = dragItemViewModels == null;
         // 保存当前的任务列表，以便在重新加载时保留用户调整的顺序和 check 状态
         var currentTasks = new Collection<DragItemViewModel>(ViewModel?.TaskItemViewModels.ToList() ?? new List<DragItemViewModel>());
 
@@ -2838,10 +2840,69 @@ public class MaaProcessor
                 tasks = FilterExecutableTasks(dragItemViewModels, ignoreCheckedState);
             }
 
-            _ = StartTask(tasks, onlyStart, checkUpdate);
+            if (isFullTaskStart)
+            {
+                ClearMultiRoleLoopValidationErrors();
+            }
+
+            var loopPlan = MultiRoleLoopPlanner.Create(tasks, isFullTaskStart && !onlyStart);
+            if (!loopPlan.IsValid)
+            {
+                ReportMultiRoleLoopValidationFailure(loopPlan);
+                return Task.CompletedTask;
+            }
+
+            // 局部运行多角色循环标记本身时，过滤后没有实际任务，不启动连接或后处理。
+            if (!isFullTaskStart && !onlyStart && loopPlan.Tasks.Count == 0)
+            {
+                return Task.CompletedTask;
+            }
+
+            _ = StartTask(loopPlan, onlyStart, checkUpdate);
         }
 
         return Task.CompletedTask;
+    }
+
+    private void ClearMultiRoleLoopValidationErrors()
+    {
+        var taskItems = ViewModel?.TaskItemViewModels
+            .Where(task => AddTaskDialogViewModel.IsMultiRoleLoopTask(task)
+                           || MultiRoleLoopPlanner.IsSwitchAccountTask(task))
+            .ToList() ?? [];
+
+        DispatcherHelper.RunOnMainThread(() =>
+        {
+            foreach (var task in taskItems)
+            {
+                task.HasValidationError = false;
+            }
+        });
+    }
+
+    private void ReportMultiRoleLoopValidationFailure(MultiRoleLoopPlan plan)
+    {
+        var errorKey = plan.ValidationError switch
+        {
+            MultiRoleLoopValidationError.MultipleMarkers => LangKeys.MultiRoleLoopErrorMultipleMarkers,
+            MultiRoleLoopValidationError.MissingSwitchTask => LangKeys.MultiRoleLoopErrorMissingSwitch,
+            MultiRoleLoopValidationError.MultipleSwitchTasks => LangKeys.MultiRoleLoopErrorMultipleSwitches,
+            MultiRoleLoopValidationError.EmptyLoopBody => LangKeys.MultiRoleLoopErrorEmptyBody,
+            MultiRoleLoopValidationError.InvalidCount => LangKeys.MultiRoleLoopErrorInvalidCount,
+            _ => LangKeys.CannotStart,
+        };
+        var message = errorKey.ToLocalization();
+
+        LoggerHelper.Warning($"多角色循环配置无效：{message}");
+        DispatcherHelper.RunOnMainThread(() =>
+        {
+            foreach (var task in plan.InvalidTasks)
+            {
+                task.HasValidationError = true;
+            }
+
+            ToastHelper.Warn(LangKeys.CannotStart.ToLocalization(), message);
+        });
     }
 
     private List<DragItemViewModel> FilterExecutableTasks(IEnumerable<DragItemViewModel>? source, bool ignoreCheckedState = false)
@@ -2878,7 +2939,13 @@ public class MaaProcessor
     private DateTime? _startTime;
     private List<DragItemViewModel> _tempTasks = [];
 
-    public async Task StartTask(List<DragItemViewModel>? tasks, bool onlyStart = false, bool checkUpdate = false)
+    public Task StartTask(List<DragItemViewModel>? tasks, bool onlyStart = false, bool checkUpdate = false)
+    {
+        var plan = MultiRoleLoopPlanner.Create(tasks ?? [], enableLoop: false);
+        return StartTask(plan, onlyStart, checkUpdate);
+    }
+
+    private async Task StartTask(MultiRoleLoopPlan plan, bool onlyStart = false, bool checkUpdate = false)
     {
         using var logScope = BeginInstanceLogScope("ExecuteTaskQueue", "Worker");
         ResetActionFailedCount();
@@ -2892,12 +2959,11 @@ public class MaaProcessor
 
         if (!onlyStart)
         {
-            tasks ??= new List<DragItemViewModel>();
-            _tempTasks = tasks;
-            LoggerHelper.Info($"准备执行任务队列：任务数量={tasks.Count}");
-            var taskAndParams = tasks.Select((task, index) => CreateNodeAndParam(task, index + 1)).ToList();
+            _tempTasks = plan.Tasks.Select(task => task.Task).Distinct().ToList();
+            LoggerHelper.Info($"准备执行任务队列：任务数量={plan.Tasks.Count}，多角色循环={plan.IsLoopEnabled}");
+            var taskAndParams = plan.Tasks.Select((task, index) => CreateNodeAndParam(task, index + 1)).ToList();
             InitializeConnectionTasksAsync(token);
-            AddCoreTasksAsync(taskAndParams, token);
+            AddCoreTasksAsync(taskAndParams, token, plan.IsLoopEnabled);
         }
 
         AddPostTasksAsync(onlyStart, checkUpdate, token);
@@ -2948,6 +3014,9 @@ public class MaaProcessor
         public string? Name { get; set; }
         public string? Entry { get; set; }
         public int? Count { get; set; }
+        internal int? LoopRound { get; set; }
+        internal int? LoopTotal { get; set; }
+        internal bool IsLoopRoundStart { get; set; }
 
         // public Dictionary<string, MaaNode>? Tasks
         // {
@@ -3210,8 +3279,9 @@ public class MaaProcessor
         }
     }
 
-    private NodeAndParam CreateNodeAndParam(DragItemViewModel task, int index)
+    private NodeAndParam CreateNodeAndParam(MultiRoleLoopPlannedTask plannedTask, int index)
     {
+        var task = plannedTask.Task;
         var taskModels = JsonConvert.DeserializeObject<Dictionary<string, JToken>>(JsonConvert.SerializeObject(task.InterfaceItem?.PipelineOverride ?? new Dictionary<string, JToken>(), new JsonSerializerSettings()
         {
             Formatting = Formatting.Indented,
@@ -3250,6 +3320,9 @@ public class MaaProcessor
             Name = task.Name,
             Entry = task.InterfaceItem?.Entry,
             Count = task.InterfaceItem?.Repeatable == true ? (task.InterfaceItem?.RepeatCount ?? 1) : 1,
+            LoopRound = plannedTask.LoopRound,
+            LoopTotal = plannedTask.LoopTotal,
+            IsLoopRoundStart = plannedTask.IsLoopRoundStart,
             // Tasks = tasks,
             Param = taskParams
         };
@@ -3582,33 +3655,48 @@ public class MaaProcessor
     }
 
 
-    private void AddCoreTasksAsync(List<NodeAndParam> taskAndParams, CancellationToken token)
+    private void AddCoreTasksAsync(List<NodeAndParam> taskAndParams, CancellationToken token, bool strictFailure)
     {
         foreach (var task in taskAndParams)
         {
+            var hasLoggedRound = false;
             TaskQueue.Enqueue(CreateMaaFWTask(task.Name,
                 async () =>
                 {
                     token.ThrowIfCancellationRequested();
+                    if (!hasLoggedRound
+                        && task.IsLoopRoundStart
+                        && task.LoopRound.HasValue
+                        && task.LoopTotal.HasValue)
+                    {
+                        hasLoggedRound = true;
+                        var roundMessage = string.Format(
+                            LangKeys.MultiRoleLoopRoundLog.ToLocalization(),
+                            task.LoopRound.Value,
+                            task.LoopTotal.Value);
+                        LoggerHelper.Info(roundMessage);
+                        AddLog(roundMessage, (IBrush?)null);
+                    }
                     // if (task.Tasks != null)
                     //     NodeDictionary = task.Tasks;
-                    await TryRunTasksAsync(MaaTasker, task.Entry, task.Param, token);
+                    await TryRunTasksAsync(MaaTasker, task.Entry, task.Param, token, strictFailure);
                 }, task.Count ?? 1
             ));
         }
     }
 
-    async private Task TryRunTasksAsync(MaaTasker? maa, string? task, string? param, CancellationToken token)
+    async private Task TryRunTasksAsync(MaaTasker? maa, string? task, string? param, CancellationToken token, bool strictFailure = false)
     {
         if (maa == null || task == null) return;
 
         var job = maa.AppendTask(task, param ?? "{}");
         await TaskManager.RunTaskAsync((Action)(() =>
         {
-            if (InstanceConfiguration.GetValue(ConfigurationKeys.ContinueRunningWhenError, true))
-                job.Wait();
-            else
-                job.Wait().ThrowIfNot(MaaJobStatus.Succeeded);
+            var status = job.Wait();
+            if (strictFailure || !InstanceConfiguration.GetValue(ConfigurationKeys.ContinueRunningWhenError, true))
+            {
+                status.ThrowIfNot(MaaJobStatus.Succeeded);
+            }
         }), token, (ex) => throw ex, name: "队列任务", catchException: true, shouldLog: false);
     }
 
